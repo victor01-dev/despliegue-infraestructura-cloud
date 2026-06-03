@@ -8,7 +8,7 @@ Este proyecto ha sido desarrollado como una práctica avanzada en administració
 🏛️ Arquitectura del Sistema
 El despliegue consta de un modelo clásico de infraestructura en la nube estructurado en capas de red y seguridad:
 
-Host de Computación: Instancia de AWS EC2 de tipo t2.micro corriendo el sistema operativo Ubuntu Server Linux.
+Host de Computación: Instancia de AWS EC2 de tipo t3.micro corriendo el sistema operativo Ubuntu Server Linux.
 
 Capa de Aislamiento: Docker Engine encargado de la descarga de la imagen oficial y aislamiento en un microentorno mutable.
 
@@ -18,7 +18,7 @@ Capa DNS Extensiva: Delegación de registros de zona en Namecheap con redireccio
 
 🛠️ Guía de Despliegue Paso a Paso
 Paso 1: Configuración del Entorno Local y Conexión SSH
-Desde el sistema operativo cliente (CachyOS), se procedió a la securización de los permisos de la clave criptográfica asimétrica de Amazon (.pem) y a establecer el túnel cifrado SSH hacia la IP pública de la instancia:
+Desde el sistema operativo cliente (Linux), se procedió a la securización de los permisos de la clave criptográfica asimétrica de Amazon (.pem) y a establecer el túnel cifrado SSH hacia la IP pública de la instancia:
 
 chmod 400 mi-clave.pem
 
@@ -44,29 +44,6 @@ Se ejecutó de manera aislada y desvinculada (detached mode) el servidor web med
 
 ubuntu@ip-172-31-3-168:~$ docker run -d -p 80:80 --name mi-web nginx
 
-Unable to find image 'nginx:latest' locally
-latest: Pulling from library/nginx
-13fd728be9eb: Pull complete
-5431d0092ffd: Pull complete
-830625e1ac85: Pull complete
-5b4d6ff92fc4: Pull complete
-7f8b1a2b17d8: Pull complete
-b4a248c845e5: Pull complete
-45381ecb0e2f: Pull complete
-cc5f57206478: Download complete
-5e6b66b5e5f1: Download complete
-Digest: sha256:5aca99593157f4ae539a0ad87621092a0ad8762f8e2eb1789085a13a0f5622369f
-Status: Downloaded newer image for nginx:latest
-42774cad898a933d9adb999ad30608c8272d5b05d4eb7292e91c9371346b66a6
-
-Explicación técnica de modificadores:
-
--d: Ejecución en segundo plano permanente (Daemon).
-
--p 80:80: Redireccionamiento del puerto 80 expuesto en la interfaz pública de la instancia hacia el puerto 80 del espacio de nombres interno del contenedor.
-
---name mi-web: Identificador nemotécnico unívoco del objeto contenedor dentro del entorno.
-
 📈 Evidencias del Despliegue y Pruebas de Verificación
 A continuación se adjuntan las trazas de comandos y capturas que prueban el funcionamiento e integración de cada elemento del flujo tecnológico:
 
@@ -74,11 +51,6 @@ A continuación se adjuntan las trazas de comandos y capturas que prueban el fun
 Verificación del estado operativo continuo mediante el comando de control docker ps:
 
 ubuntu@ip-172-31-3-168:~$ docker ps
-
-CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                               NAMES
-42774cad898a   nginx     "/docker-entrypoint.…"   7 seconds ago   Up 7 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp   mi-web
-
-Como puede apreciarse en el output, el contenedor asigna el socket web correctamente y mapea el puerto TCP en los stacks IPv4 e IPv6 (0.0.0.0:80->80/tcp, :::80->80/tcp).
 
 2. Respuesta de Red por Dirección IP Absoluta
 Comprobación de la conectividad en el navegador sobre la IP del host de AWS, retornando de forma exitosa el payload de bienvenida de Nginx:

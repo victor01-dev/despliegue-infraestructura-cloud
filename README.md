@@ -4,7 +4,7 @@ Proyecto de despliegue automatizado con Docker sobre una instancia EC2 en AWS
 Despliegue de Infraestructura Cloud: Nginx sobre Docker en AWS EC2
 Este repositorio contiene la documentación técnica y la configuración necesarias para el despliegue de un servidor web Nginx altamente disponible y contenedorizado utilizando Docker sobre una instancia de computación virtualizada Amazon EC2 (Elastic Compute Cloud) de Amazon Web Services (AWS).
 
-Este proyecto ha sido desarrollado como una práctica avanzada en administración de sistemas cloud para el ciclo formativo de ASIR (Administración de Sistemas Informáticos en Red).
+Este proyecto ha sido desarrollado como una práctica avanzada en administración de sistemas cloud.
 
 🏛️ Arquitectura del Sistema
 El despliegue consta de un modelo clásico de infraestructura en la nube estructurado en capas de red y seguridad:

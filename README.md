@@ -1,4 +1,4 @@
-ocumentación de Despliegue: Servidor Web en Docker (AWS EC2) con Seguridad Perimetral en Cloudflare
+Documentación de Despliegue: Servidor Web en Docker (AWS EC2) con Seguridad Perimetral en Cloudflare
 Este documento detalla los pasos técnicos seguidos para el aprovisionamiento, contenedorización y securización perimetral de un sitio web personalizado. La arquitectura final garantiza alta disponibilidad, aislamiento de procesos mediante contenedores y mitigación de amenazas a través de un proxy inverso con cifrado SSL/TLS.
 
 🏛️ Diseño de la Arquitectura de Red y Seguridad

@@ -44,3 +44,6 @@ kehlani.ns.cloudflare.com
 neil.ns.cloudflare.com
 
 Posteriormente, se dio de alta un registro maestro de tipo A asignando el nombre del dominio principal hacia la dirección IP pública fija del servidor cloud de Amazon Web Services (18.175.209.144), manteniendo el estado de Proxy (Nube Naranja) activado de forma permanente. Para concluir el flujo, se parametrizó la directiva de cifrado SSL/TLS dentro de Cloudflare en modo Flexible. Esta configuración establece un canal de cifrado asimétrico seguro mediante HTTPS entre el navegador del usuario y el nodo de Cloudflare por el puerto 443, mientras que Cloudflare realiza la traducción y entrega de datos hacia la infraestructura de AWS a través del puerto 80 estándar, logrando compatibilidad directa con el contenedor Nginx sin necesidad de instalar certificados locales en la instancia.
+
+<img width="1083" height="257" alt="image" src="https://github.com/user-attachments/assets/18916d6f-2dae-4933-a0ea-1ad214efdedb" />
+

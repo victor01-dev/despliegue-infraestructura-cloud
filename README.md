@@ -12,10 +12,7 @@ Por último, se sitúa la capa de aislamiento y persistencia gobernada por Docke
 
 🛠️ Fase 1: Conexión Inicial y Preparación del Host
 
-En primer lugar, se configuran las credenciales SSH en la máquina local para establecer un túnel cifrado hacia la instancia virtual de AWS EC2, aplicando restricciones estrictas de lectura sobre la clave privada:
-
-chmod 400 accesoawslinuxserver.pem
-ssh -i "accesoawslinuxserver.pem" ubuntu@18.175.209.144
+En primer lugar, se configuran las credenciales SSH en la máquina local para establecer un túnel cifrado hacia la instancia virtual de AWS EC2, aplicando restricciones estrictas de lectura sobre la clave privada
 
 🛠️ Fase 2: Aprovisionamiento del Entorno Docker
 

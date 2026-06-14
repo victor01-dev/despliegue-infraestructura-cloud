@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Servidor en AWS</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #1e1e24; 
+            color: #f4f4f9; 
+            text-align: center; 
+            padding-top: 50px; 
+        }
+        h1 { color: #ff9900; } /* Un color naranja estilo AWS para resaltar */
+        p { color: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <h1>¡Despliegue Exitoso en AWS!</h1>
+    <p>Esta página está corriendo dentro de un contenedor Docker en Ubuntu Server.</p>
+</body>
+</html>

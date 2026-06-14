@@ -1,72 +1,139 @@
-Documentación de Despliegue: Servidor Web en Docker (AWS EC2) con Seguridad Perimetral en Cloudflare: http://midominioweb.xyz
+# Despliegue de Infraestructura Cloud con Docker y AWS EC2
 
-Este documento detalla los pasos técnicos seguidos para el aprovisionamiento, contenedorización y securización perimetral de un sitio web personalizado. La arquitectura final garantiza alta disponibilidad, aislamiento de procesos mediante contenedores y mitigación de amenazas a través de un proxy inverso con cifrado SSL/TLS.
+Proyecto de despliegue de un servidor web sobre infraestructura cloud real, con seguridad multicapa y proxy inverso. El sitio está disponible en producción en [midominioweb.xyz](https://midominioweb.xyz/).
 
-🏛️ Diseño de la Arquitectura de Red y Seguridad
+## Arquitectura
 
-El flujo de tráfico de la infraestructura se distribuye en varias capas independientes que trabajan de forma coordinada. En primer lugar, la capa de resolución y proxy controlada por Cloudflare actúa como la primera línea de defensa de la infraestructura. Esta capa recibe las peticiones de los clientes a través del protocolo seguro HTTPS por el puerto 443, oculta la dirección IP pública real de nuestro servidor en la nube y reenvía el tráfico hacia el origen. 
+```
+                         INTERNET
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │  Cloudflare   │  ← Proxy inverso + WAF + SSL/TLS
+                    │  (CDN / WAF)  │    Oculta IP de origen
+                    └───────┬───────┘
+                            │ HTTPS → HTTP (modo Flexible)
+                            ▼
+               ┌────────────────────────┐
+               │      AWS EC2           │
+               │   Ubuntu 22.04 LTS     │
+               │                        │
+               │  ┌──────────────────┐  │
+               │  │   UFW Firewall   │  │  ← Solo IPs de Cloudflare en :80
+               │  └────────┬─────────┘  │    SSH abierto en :22
+               │           │            │
+               │  ┌────────▼─────────┐  │
+               │  │  AWS Security    │  │  ← Filtro a nivel de red (VPC)
+               │  │     Groups       │  │
+               │  └────────┬─────────┘  │
+               │           │            │
+               │  ┌────────▼─────────┐  │
+               │  │ Docker: nginx    │  │  ← Servidor web en contenedor
+               │  │   (alpine)  :80  │  │    Volumen persistente para web/
+               │  └──────────────────┘  │
+               └────────────────────────┘
+```
 
-En segundo lugar, se encuentra el cortafuegos perimetral gestionado mediante los AWS Security Groups, encargado de filtrar los accesos a nivel de red externa en la nube de Amazon, permitiendo conexiones entrantes únicamente en los puertos parametrizados. Tras superar esta barrera, el tráfico llega al cortafuegos del sistema operativo a través del servicio UFW de Linux, el cual controla las interfaces de red internas de la máquina virtual antes de derivar los paquetes a los sockets de destino. 
+## Stack tecnológico
 
-Por último, se sitúa la capa de aislamiento y persistencia gobernada por Docker Engine, un motor de virtualización que corre el servidor Nginx de forma totalmente aislada y acoplada a un volumen local del sistema de archivos mediante un Bind Mount.
+| Capa | Tecnología |
+|---|---|
+| DNS / Proxy / WAF | Cloudflare |
+| Cloud | AWS EC2 (t2.micro, Ubuntu 22.04) |
+| Firewall host | UFW (con reglas iptables subyacentes) |
+| Firewall red | AWS Security Groups |
+| Contenedor | Docker (nginx:alpine) |
+| Orquestación | Docker Compose |
 
-🛠️ Fase 1: Conexión Inicial y Preparación del Host
+## Estructura del repositorio
 
-En primer lugar, se configuran las credenciales SSH en la máquina local para establecer un túnel cifrado hacia la instancia virtual de AWS EC2, aplicando restricciones estrictas de lectura sobre la clave privada
+```
+.
+├── docker-compose.yml     # Definición del servicio Docker
+├── setup.sh               # Script de instalación y despliegue desde cero
+├── nginx/
+│   └── nginx.conf         # Configuración de Nginx con cabeceras de seguridad
+│                          # y restricción de IPs a Cloudflare
+└── web/
+    └── index.html         # Contenido del sitio web
+```
 
-🛠️ Fase 2: Aprovisionamiento del Entorno Docker
+## Despliegue
 
-Una vez dentro de la máquina virtual con Ubuntu Server, se realiza el mantenimiento del sistema operativo actualizando los repositorios de firmas y los paquetes de software. Posteriormente, se procede con la instalación del motor de contenedores Docker, la inicialización de su demonio y la asignación del usuario actual al grupo de seguridad de Docker para permitir la administración del entorno sin necesidad de anteponer el comando sudo de forma redundante:
+### Requisitos previos
+- Instancia EC2 con Ubuntu 22.04 LTS
+- Dominio con zona DNS gestionada en Cloudflare
+- Acceso SSH a la instancia
 
-sudo apt update && sudo apt upgrade -y
+### Instalación automática
 
-sudo apt install docker.io -y
+```bash
+git clone https://github.com/victor01-dev/despliegue-infraestructura-cloud.git
+cd despliegue-infraestructura-cloud
+chmod +x setup.sh
+./setup.sh
+```
 
-sudo systemctl start docker
+El script instala Docker, configura UFW con las IPs de Cloudflare, clona el repo y levanta el contenedor.
 
-sudo systemctl enable docker
+### Gestión del contenedor
 
-sudo usermod -aG docker ubuntu
+```bash
+# Arrancar
+docker compose up -d
 
-exit
+# Ver estado
+docker compose ps
 
-(Nota: Tras la ejecución del comando exit, se efectúa una nueva reconexión por SSH hacia la máquina para que la terminal del usuario herede correctamente los privilegios del nuevo grupo de Docker recién asignado).
+# Ver logs en tiempo real
+docker compose logs -f
 
-🛠️ Fase 3: Persistencia y Despliegue del Contenedor Web
+# Parar
+docker compose down
 
-Se genera un directorio dedicado en el espacio de usuario del host para albergar de forma persistente los ficheros que compondrán el sitio web. A través del editor de texto del terminal, se define la estructura y estilos CSS del index.html. Una vez preparados los datos de origen, se inicializa el contenedor Nginx en segundo plano mediante el modo daemon, enlazando el puerto 80 del host con el del contenedor y montando de forma síncrona el volumen local en caliente dentro de la ruta por defecto que utiliza el servidor web para despachar contenido:
+# Actualizar contenido web (sin reiniciar)
+# Editar archivos en web/ — el volumen se refleja automáticamente
+```
 
-mkdir sitio-web && cd sitio-web
+## Capas de seguridad
 
-nano index.html
+### 1. Cloudflare (perímetro)
+- Proxy inverso que oculta la IP real del servidor
+- SSL/TLS en modo Flexible (HTTPS entre cliente y Cloudflare)
+- WAF básico activo en plan gratuito
+- Protección DDoS integrada
 
-docker run -d -p 80:80 --name mi-web -v $(pwd):/usr/share/nginx/html nginx
+> **Limitación conocida:** El modo Flexible cifra solo el tramo cliente→Cloudflare. El tramo Cloudflare→servidor va en HTTP. El siguiente paso sería modo **Full (Strict)** con certificado en el servidor (Let's Encrypt).
 
-Para verificar de manera local que el servidor responde de forma correcta dentro de la propia máquina y comprobar el estado de las cabeceras HTTP que despacha el contenedor, se realiza una petición interna de bucle de retorno:
+### 2. UFW (host)
+- Política por defecto: `deny incoming`
+- Puerto 22 abierto para SSH
+- Puerto 80 restringido exclusivamente a rangos IP de Cloudflare
 
-curl -I http://localhost
+### 3. AWS Security Groups (red)
+- Puerto 22: SSH
+- Puerto 80: HTTP (tráfico de Cloudflare)
+- Todo lo demás: denegado por defecto
 
-🛠️ Fase 4: Apertura de Cortafuegos y Resolución de Conflictos
+### 4. Nginx
+- `server_tokens off` — oculta versión del servidor
+- Cabeceras de seguridad: `X-Frame-Options`, `X-Content-Type-Options`
+- Acceso a archivos ocultos (`.env`, `.git`) denegado
+- Restricción de IPs de Cloudflare a nivel de servidor web
 
-Durante el despliegue se identificaron dos niveles de cortafuegos restrictivos aplicados por defecto que denegaban las peticiones entrantes del proxy inverso (manifestándose como Errores 521 y 522 en los clientes). Para subsanar esto, se aplicaron medidas de mitigación tanto en las reglas perimetrales de AWS como en las tablas internas del kernel de Linux. En primer lugar, se ejecutó una limpieza completa de las cadenas de filtrado de paquetes de red para eliminar cualquier descarte intermitente que pudiese interferir entre la interfaz de red pública de AWS y el puente virtual de comunicación de Docker:
+## Resolución de problemas durante el proyecto
 
-sudo iptables -F
+### Error 521 (Web server is down)
+Cloudflare no podía conectar con el servidor. Causas investigadas:
+- UFW bloqueaba las IPs de Cloudflare → solucionado añadiendo reglas por rango CIDR
+- El contenedor no estaba escuchando en `0.0.0.0:80` sino solo en `127.0.0.1:80` → corregido en la configuración del puerto en Docker
 
-En segundo lugar, se gestionó el estado del firewall nativo del sistema operativo Ubuntu (UFW). Dado que la seguridad perimetral a gran escala está completamente delegada y controlada en los paneles de AWS Security Groups, se procedió a habilitar explícitamente el socket TCP del puerto web y a deshabilitar el servicio interno para evitar solapamientos y bloqueos de tiempo de espera hacia Cloudflare:
+### Error 522 (Connection timed out)
+El paquete llegaba a la instancia pero no recibía respuesta. Causa: reglas de `iptables` residuales que descartaban el tráfico antes de que UFW lo procesara → solucionado con `iptables -F` y reinicio de UFW.
 
-sudo ufw allow 80/tcp
+## Mejoras futuras
 
-sudo ufw disable
-
-🛠️ Fase 5: Configuración DNS y SSL Perimetral
-
-Finalmente, la gestión de la zona DNS del dominio se migró desde el registrador original hacia la infraestructura global de Cloudflare para completar el flujo de enrutamiento y seguridad. Los pasos realizados incluyeron la delegación completa de los servidores de nombres autoritativos, introduciendo las direcciones maestras provistas por la plataforma en el panel de control del dominio:
-
-kehlani.ns.cloudflare.com
-
-neil.ns.cloudflare.com
-
-Posteriormente, se dio de alta un registro maestro de tipo A asignando el nombre del dominio principal hacia la dirección IP pública fija del servidor cloud de Amazon Web Services (18.175.209.144), manteniendo el estado de Proxy (Nube Naranja) activado de forma permanente. Para concluir el flujo, se parametrizó la directiva de cifrado SSL/TLS dentro de Cloudflare en modo Flexible. Esta configuración establece un canal de cifrado asimétrico seguro mediante HTTPS entre el navegador del usuario y el nodo de Cloudflare por el puerto 443, mientras que Cloudflare realiza la traducción y entrega de datos hacia la infraestructura de AWS a través del puerto 80 estándar, logrando compatibilidad directa con el contenedor Nginx sin necesidad de instalar certificados locales en la instancia.
-
-<img width="1083" height="257" alt="image" src="https://github.com/user-attachments/assets/18916d6f-2dae-4933-a0ea-1ad214efdedb" />
-
+- [ ] SSL/TLS modo Full (Strict) con Let's Encrypt en el servidor
+- [ ] Pipeline CI/CD con GitHub Actions para despliegue automático al hacer push
+- [ ] Monitorización con Prometheus + Grafana
+- [ ] Gestión de secretos con AWS Secrets Manager o Variables de entorno cifradas

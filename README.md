@@ -170,10 +170,3 @@ Cloudflare no podía conectar con el servidor. Causas investigadas:
 
 ### Error 522 (Connection timed out)
 El paquete llegaba a la instancia pero no recibía respuesta. Causa: reglas de `iptables` residuales que descartaban el tráfico antes de que UFW lo procesara → solucionado con `iptables -F` y reinicio de UFW.
-
-## Mejoras futuras
-
-- [ ] Pipeline CI/CD con GitHub Actions para despliegue automático al hacer push
-- [ ] Monitorización con Prometheus + Grafana
-- [ ] Gestión de secretos con AWS Secrets Manager
-- [ ] Renovación automática del certificado Origin CA

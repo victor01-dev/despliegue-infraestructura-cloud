@@ -1,6 +1,6 @@
 # Despliegue de Infraestructura Cloud con Docker y AWS EC2
 
-Proyecto de despliegue de un servidor web sobre infraestructura cloud real, con seguridad multicapa, proxy inverso y cifrado HTTPS extremo a extremo. El sitio está disponible en producción en [midominioweb.xyz](https://midominioweb.xyz/).
+Proyecto de despliegue de un servidor web sobre infraestructura cloud real, con seguridad multicapa, proxy inverso y cifrado HTTPS extremo a extremo. El sitio está disponible en producción en https://victor01-dev.github.io/despliegue-infraestructura-cloud/.
 
 ## Arquitectura
 
